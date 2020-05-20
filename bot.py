@@ -24,7 +24,9 @@ what_sizes = {
     "xlarge": False
 }
 
+ITEM_NAME="Overdyed L/S Top(Black)"
 FIND_HATS = False
+INSTANT_RETURN = True
 
 urlStem="https://www.supremenewyork.com"
 
@@ -61,13 +63,13 @@ def shop(url):
     if what_sizes.get("medium") != False and available_sizes.get("medium") != False:
         browser.find_element_by_xpath('//*[@id="size"]/option[' + str(available_sizes.get('medium')) + ']').click()
 
-    if what_sizes.get("large") != False and available_sizes.get("large") != False:
+    elif what_sizes.get("large") != False and available_sizes.get("large") != False:
         browser.find_element_by_xpath('//*[@id="size"]/option[' + str(available_sizes.get('large')) + ']').click()
 
-    if what_sizes.get("xlarge") != False and available_sizes.get("xlarge") != False:
+    elif what_sizes.get("xlarge") != False and available_sizes.get("xlarge") != False:
         browser.find_element_by_xpath('//*[@id="size"]/option[' + str(available_sizes.get('xlarge')) + ']').click()
     
-    if what_sizes.get("small") != False and available_sizes.get("small") != False:
+    elif what_sizes.get("small") != False and available_sizes.get("small") != False:
         browser.find_element_by_xpath('//*[@id="size"]/option[' + str(available_sizes.get('small')) + ']').click()    
 
     browser.find_element_by_xpath('//*[@id="add-remove-buttons"]/input').click()
@@ -95,6 +97,7 @@ def shop(url):
     
 
 def scrape(url):
+    foundItem = False
     articles = {}
     #request = requests.get(url,timeout=5)
     b_obj = BytesIO()
@@ -111,6 +114,11 @@ def scrape(url):
         link = article.find('a',href=True)['href']
         articleDetails = find_article_details(article,link)
         articles[articleDetails["name"]] = {"colour" : articleDetails["colour"], "url" : articleDetails["url"]}
+        if articleDetails["name"] == ITEM_NAME:
+            foundItem = True        
+        if INSTANT_RETURN == True and foundItem == True and articleDetails["name"] != ITEM_NAME:
+            print("******************")
+            break
         if FIND_HATS == False and is_hat(link):
             break
     for name, details in articles.items():
@@ -142,15 +150,25 @@ def find_article_details(article,link):
 
 def find(url,string):
     articles = scrape(url)
-    return articles.get(string)["url"]
+    if articles.get(string) == None:
+        return get_first_closest_match(articles, string)["url"]
+    else:
+        return articles.get(string)["url"]
     
+def get_first_closest_match(articles, string):
+    i_start = string.find('(')
+    new_string = string[:i_start]
+    for key in articles:
+        if str(key).startswith(new_string):
+            return articles.get(key)
+    return None
 
 
 if __name__ == "__main__":
     url = "https://www.supremenewyork.com/shop/all"
-    string="Wool Suit(Black Pinstripe)"
-    itemUrl = find(url,string)
+    itemUrl = find(url,ITEM_NAME)
     #itemUrl = "/shop/shirts/s3o9qd7fz/suabzps94"
     shop(itemUrl)
+    time.sleep(100)
 
 
